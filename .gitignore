@@ -1,0 +1,7 @@
+# Ignore the virtual environment directory
+proenv/
+
+# Ignore pipenv or pip freeze requirements
+*.pip
+*.lock
+
