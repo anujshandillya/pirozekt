@@ -5,3 +5,5 @@ proenv/
 *.pip
 *.lock
 
+# ignore env file
+.env

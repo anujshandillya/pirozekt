@@ -5,8 +5,13 @@ import pdfplumber
 import streamlit as st
 from io import StringIO
 from typing import Sequence
+from dotenv import load_dotenv
+import os
 
-co = cohere.Client('lxIvoNPeLLQy4d5QQq41zfro6076VpS2681QjziY')
+load_dotenv()
+api=os.getenv('API_KEY')
+
+co=cohere.Client(api)
 
 def extractTextFromPdf(pdf_path: str):
     text = ""

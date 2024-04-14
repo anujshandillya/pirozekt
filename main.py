@@ -5,8 +5,13 @@ import pandas as pd
 import streamlit as st
 import pdfplumber
 from numpy.linalg import norm
+from dotenv import load_dotenv
+import os
 
-co=cohere.Client('lxIvoNPeLLQy4d5QQq41zfro6076VpS2681QjziY')
+load_dotenv()
+api=os.getenv('API_KEY')
+
+co=cohere.Client(api)
 CHUNK_SIZE=1024
 TEMPERATURE = 0.5
 MAX_TOKENS = 50
