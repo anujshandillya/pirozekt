@@ -1,5 +1,6 @@
 # Ignore the virtual environment directory
 myenv/
+proenv/
 
 # Ignore pipenv or pip freeze requirements
 *.pip
