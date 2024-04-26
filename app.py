@@ -1,18 +1,20 @@
+import os
+from io import StringIO
+from typing import Sequence
+
 import cohere
 import numpy as np
 import pandas as pd
 import pdfplumber
 import streamlit as st
-from io import StringIO
-from typing import Sequence
 from dotenv import load_dotenv
-import os
 from numpy.linalg import norm
 
 #  loaded local env
 load_dotenv()
 
 api=os.getenv('API_KEY')
+base=os.getenv('BASE')
 # default settings for generation of text
 TEMPERATURE = 0.5
 MAX_TOKENS = 200
@@ -95,7 +97,7 @@ if df is not None:
         MAX_TOKENS=st.slider('Max Tokens', min_value=1, max_value=5000, value=MAX_TOKENS)
 
 if df is not None and prompt != "":
-    basePrompt = "Based on the passage above, answer the following question:"
+    basePrompt = base
     promptEmbeddings = embed([prompt])
     augPrompts = topNNeighbours(np.array(promptEmbeddings), embeddings, df)
     joinedPrompt = '\n'.join(str(neighbour) for neighbour in augPrompts) + '\n\n' + basePrompt + '\n' + prompt + '\n'
