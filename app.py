@@ -1,23 +1,25 @@
+import os
+from io import StringIO
+from typing import Sequence
+
 import cohere
 import numpy as np
 import pandas as pd
 import pdfplumber
 import streamlit as st
-from io import StringIO
-from typing import Sequence
 from dotenv import load_dotenv
-import os
 from numpy.linalg import norm
 
 #  loaded local env
 load_dotenv()
 
 api=os.getenv('API_KEY')
+base=os.getenv('BASE')
 # default settings for generation of text
 TEMPERATURE = 0.5
 MAX_TOKENS = 200
 text=""
-# result=""
+result=None
 
 co=cohere.Client(api)
 
@@ -30,12 +32,12 @@ def extractTextFromPdf(pdfPath: str):
     return text
 
 # Creating a dataframe to break information into user defined Chunks.
-def processTextInput(text: str, run_id: str = None):  
-    text = StringIO(text).read()  
+def processTextInput(text: str, run_id: str = None):
+    text = StringIO(text).read()
     CHUNK_SIZE=150
-    chunks = [text[i:i + CHUNK_SIZE] for i in range(0, len(text), CHUNK_SIZE)]  
+    chunks = [text[i:i + CHUNK_SIZE] for i in range(0, len(text), CHUNK_SIZE)]
 
-    df = pd.DataFrame.from_dict({'text': chunks}) 
+    df = pd.DataFrame.from_dict({'text': chunks})
     return df
 
 # Converting the dataframe to list of strings.
@@ -50,13 +52,13 @@ def embed(Texts: Sequence[str]):
     return res.embeddings
 
 # Finding K nearest neighbours to enhance the answer.
-def topNNeighbours(promptEmbeddings: np.ndarray, storageEmbeddings: np.ndarray, df, k: int = 5):  
-	if isinstance(storageEmbeddings, list):  
-		storageEmbeddings = np.array(storageEmbeddings)  
-	if isinstance(promptEmbeddings, list):  
-		storageEmbeddings = np.array(promptEmbeddings)  
-	similarityMatrix = promptEmbeddings @ storageEmbeddings.T / np.outer(norm(promptEmbeddings, axis=-1), norm(storageEmbeddings, axis=-1))  
-	numNeighbours = min(similarityMatrix.shape[1], k)  
+def topNNeighbours(promptEmbeddings: np.ndarray, storageEmbeddings: np.ndarray, df, k: int = 5):
+	if isinstance(storageEmbeddings, list):
+		storageEmbeddings = np.array(storageEmbeddings)
+	if isinstance(promptEmbeddings, list):
+		storageEmbeddings = np.array(promptEmbeddings)
+	similarityMatrix = promptEmbeddings @ storageEmbeddings.T / np.outer(norm(promptEmbeddings, axis=-1), norm(storageEmbeddings, axis=-1))
+	numNeighbours = min(similarityMatrix.shape[1], k)
 	indices = np.argsort(similarityMatrix, axis=-1)[:, -numNeighbours:]
 	listOfStr=df.values.tolist()
 	neighbourValues:list=[]
@@ -78,9 +80,9 @@ if options=="PDF":
         text=extractTextFromPdf(pdfFile)
     if text is not None:
         df=processTextInput(text)
-elif options == "TEXT":  
-    text = st.text_area("Paste the Document")  
-    if text is not None:  
+elif options == "TEXT":
+    text = st.text_area("Paste the Document")
+    if text is not None:
         df = processTextInput(text)
 
 if text!="":
@@ -95,11 +97,11 @@ if df is not None:
         MAX_TOKENS=st.slider('Max Tokens', min_value=1, max_value=5000, value=MAX_TOKENS)
 
 if df is not None and prompt != "":
-    basePrompt = "Based on the passage above, answer the following question:"
+    basePrompt = base
     promptEmbeddings = embed([prompt])
     augPrompts = topNNeighbours(np.array(promptEmbeddings), embeddings, df)
     joinedPrompt = '\n'.join(str(neighbour) for neighbour in augPrompts) + '\n\n' + basePrompt + '\n' + prompt + '\n'
     result = generate(joinedPrompt,TEMPERATURE,MAX_TOKENS)
 
-if result is not None: 
+if result is not None:
     st.write(result.generations[0].text)
